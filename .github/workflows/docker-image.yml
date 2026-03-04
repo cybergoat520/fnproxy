@@ -1,0 +1,33 @@
+name: Build Docker Image
+
+on:
+  push:
+    branches:
+      - main  # 监听 main 分支的推送事件，也可以改为你想要触发构建的分支
+  pull_request:
+    branches:
+      - main  # 在 PR 时也触发构建
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # 使用 Ubuntu 最新的运行环境
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2  # 检出代码库
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2  # 设置 Docker Buildx
+
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache  # 缓存 Docker 镜像的中间层
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build the Docker image for amd64
+        run: |
+          docker buildx create --use
+          docker buildx build --platform linux/amd64 -t fnproxy:latest . --load  # 使用 --load 将镜像加载到本地
